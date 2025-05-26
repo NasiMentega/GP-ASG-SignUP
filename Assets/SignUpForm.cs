@@ -56,16 +56,18 @@ public class SignUpForm : MonoBehaviour
             return;
         }
 
-        SignUpData singUp = new SignUpData(email, pass);
-        string json = JsonUtility.ToJson(singUp);
+        SignUpData signUp = new SignUpData(email, pass);
+        string json = JsonUtility.ToJson(signUp);
         Debug.Log("Json = " + json);
 
+
+        StartCoroutine(Upload(email, pass));
     }
 
     private bool ValidateEmail(string email)
     {
         email = email.ToLower();
-        string pattern = @"^[^@\s]+@[^@\s]+\.(com|id)$";
+        string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
 
         if (!Regex.IsMatch(email, pattern))
         {
@@ -112,5 +114,32 @@ public class SignUpForm : MonoBehaviour
 
         return true;
     }
+
+    private IEnumerator Upload(string email, string pass)
+    {
+        SignUpData data = new SignUpData(email, pass);
+
+        var formData = new List<IMultipartFormSection>
+    {
+        new MultipartFormDataSection("email", email),
+        new MultipartFormDataSection("password", pass),
+        new MultipartFormDataSection("date", data.createDate)
+    };
+
+        using var www = UnityWebRequest.Post("https://binusgat.rf.gd/unity-api-test/api/auth/signup.php", formData);
+        www.SetRequestHeader("User-Agent", "Mozilla/5.0");
+        yield return www.SendWebRequest();
+
+        if (www.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError("Upload failed: " + www.error);
+        }
+        else
+        {
+            Debug.Log("Form upload complete!");
+            Debug.Log("Server response: " + www.downloadHandler.text);
+        }
+    }
+
 
 }
